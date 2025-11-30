@@ -14,6 +14,71 @@ const BOND_RADIUS = 0.02
 const sphereGeometry = new THREE.SphereGeometry(BASE_RADIUS, 16, 16);
 const cylinderGeometry = new THREE.CylinderGeometry(BOND_RADIUS, BOND_RADIUS, 1, 8);
 
+// ------ Extra ambience components ------
+
+// Soft volumetric glow “background” for the DNA scene
+function AmbientGlow({ color = '#0a0030', intensity = 0.6, radius = 60 }) {
+  return (
+    <mesh scale={radius}>
+      <sphereGeometry args={[1, 32, 32]} />
+      <meshStandardMaterial
+        side={THREE.BackSide}
+        color={color}
+        emissive={color}
+        emissiveIntensity={intensity}
+        toneMapped={false}
+        transparent
+        opacity={0.9}
+      />
+    </mesh>
+  )
+}
+
+// Floating “bio particles” around the DNA
+function BioParticles({ count = 350, bounds = [30, 12, 12] }) {
+  const pointsRef = useRef()
+  const positions = useMemo(() => {
+    const [bx, by, bz] = bounds
+    const arr = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const idx = i * 3
+      arr[idx]     = (Math.random() - 0.5) * bx
+      arr[idx + 1] = (Math.random() - 0.5) * by
+      arr[idx + 2] = (Math.random() - 0.5) * bz
+    }
+    return arr
+  }, [count, bounds])
+
+  useFrame(({ clock }) => {
+    if (!pointsRef.current) return
+    const t = clock.getElapsedTime()
+
+    // slow orbital drift + very mild vertical wobble
+    pointsRef.current.rotation.y = t * 0.05
+    pointsRef.current.position.y = Math.sin(t * 0.3) * 0.3
+  })
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          array={positions}
+          count={count}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.12}
+        color="#4fb4ff"
+        transparent
+        opacity={0.55}
+        depthWrite={false}
+        sizeAttenuation
+      />
+    </points>
+  )
+}
 
 function DnaScene() {
   const dnaGroupRef = useRef() 
@@ -64,7 +129,6 @@ function DnaScene() {
       const p1 = curve.getPoint(t);
       const p2 = curveOffset.getPoint(t);
 
-      
       const pair = pairs[Math.floor(Math.random() * pairs.length)];
       
       let color1, color2;
@@ -122,7 +186,7 @@ function DnaScene() {
       bondsMesh.geometry.attributes.instanceColor.needsUpdate = true;
     }
 
-  }, [dnaElementData]); 
+  }, [dnaElementData, dummy]); 
 
   useFrame((state, delta) => {
     if (dnaGroupRef.current) {
@@ -133,16 +197,20 @@ function DnaScene() {
 
   return (
     <group ref={dnaGroupRef}>
-      <ambientLight intensity={0.8} /> 
-      <directionalLight position={[10, 20, 10]} intensity={2.5} color={0xffeedd} /> 
-      <directionalLight position={[-10, -20, -10]} intensity={1.5} color={0xccddff} /> 
+      {/* New ambience */}
+      <AmbientGlow color="#120036" intensity={0.7} radius={60} />
+      <BioParticles count={380} bounds={[30, 14, 14]} />
+
+      {/* Lights */}
+      <ambientLight intensity={0.6} /> 
+      <directionalLight position={[10, 20, 10]} intensity={2.0} color={0xffeedd} /> 
+      <directionalLight position={[-10, -20, -10]} intensity={1.2} color={0xccddff} /> 
       <pointLight position={[0, STRAND_LENGTH / 2, HELIX_RADIUS * 3]} intensity={0.5} color={0xffffff} distance={10} />
 
-
-      {/* STRANDS GULA-FOSFAT (Tube) (TIDAK BERUBAH) */}
-<Tube args={[curve, STRAND_COUNT * 2, TUBE_RADIUS, 8, false]}>
-          <meshStandardMaterial
-        color="#ed672b"
+      {/* STRANDS GULA-FOSFAT */}
+      <Tube args={[curve, STRAND_COUNT * 2, TUBE_RADIUS, 8, false]}>
+        <meshStandardMaterial
+          color="#ed672b"
           roughness={0.7}
           metalness={0.1}
           transparent
@@ -151,23 +219,32 @@ function DnaScene() {
       </Tube>
       <Tube args={[curveOffset, STRAND_COUNT * 2, TUBE_RADIUS, 8, false]}> 
         <meshStandardMaterial
-        color="#0d92a3"
+          color="#0d92a3"
           roughness={0.7}
           metalness={0.1}
           transparent
           opacity={0.8}
         />
       </Tube>
-      <instancedMesh ref={basesRef} args={[sphereGeometry, null, dnaElementData.bases.length]}>
+
+      {/* BASES */}
+      <instancedMesh
+        ref={basesRef}
+        args={[sphereGeometry, null, dnaElementData.bases.length]}
+      >
         <meshStandardMaterial
-        color="#39ffff"
+          color="#39ffff"
           roughness={0.3}
           metalness={0.0}
           emissiveIntensity={0.2} 
         />
       </instancedMesh>
 
-      <instancedMesh ref={bondsRef} args={[cylinderGeometry, null, dnaElementData.bonds.length]}>
+      {/* BONDS */}
+      <instancedMesh
+        ref={bondsRef}
+        args={[cylinderGeometry, null, dnaElementData.bonds.length]}
+      >
         <meshStandardMaterial
           color="#b4598c"
           roughness={0.7}

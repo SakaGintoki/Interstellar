@@ -17,4 +17,6 @@ export const useSceneStore = create((set) => ({
     Kita tidak membutuhkannya sama sekali karena kita
     memakai useScrollNavigation.js (Sistem 1).
   */
+  scaleExp: -9.52,
+  setScaleExp: (exp) => set({ scaleExp: exp }),
 }))
