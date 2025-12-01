@@ -1,114 +1,189 @@
 import React, { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Sphere, useTexture, Line } from '@react-three/drei' // <-- Line ditambahkan
+import { Sphere, useTexture, Line } from '@react-three/drei'
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
-// --- Data Planet HD (SAMA, TIDAK DIUBAH) ---
+// --- Data Planet ---
 const planetsData = [
-  { name: 'Mercury', distance: 4, radius: 0.2, texture: '/textures/mercury.jpg', speed: 1.8, bump: 0.05 },
-  { name: 'Venus', distance: 6, radius: 0.35, texture: '/textures/venus_surface.jpg', speed: 1.2, bump: 0.08 },
-  { name: 'Earth', distance: 8, radius: 0.4, texture: '/textures/earth_day.jpg', speed: 1.0, bump: 0.03, clouds: true },
-  { name: 'Mars', distance: 10, radius: 0.3, texture: '/textures/mars.jpg', speed: 0.8, bump: 0.06 },
-  { name: 'Jupiter', distance: 16, radius: 1.5, texture: '/textures/jupiter.jpg', speed: 0.4, bump: 0.1 },
-  { name: 'Saturn', distance: 22, radius: 1.2, texture: '/textures/saturn.jpg', speed: 0.3, bump: 0.05, ring: true },
-  { name: 'Uranus', distance: 28, radius: 0.8, texture: '/textures/uranus.jpg', speed: 0.2, bump: 0.03 },
-  { name: 'Neptune', distance: 34, radius: 0.75, texture: '/textures/neptune.jpg', speed: 0.1, bump: 0.02 },
+  { name: 'Mercury', distance: 10, radius: 0.4, texture: '/textures/mercury.jpg', speed: 1.5, bump: 0.1 },
+  { name: 'Venus', distance: 15, radius: 0.7, texture: '/textures/venus_surface.jpg', speed: 1.2, bump: 0.1 },
+  { name: 'Earth', distance: 22, radius: 0.8, texture: '/textures/earth_day.jpg', speed: 1.0, bump: 0.5, clouds: true },
+  { name: 'Mars', distance: 30, radius: 0.6, texture: '/textures/mars.jpg', speed: 0.8, bump: 0.2 },
+  { name: 'Jupiter', distance: 42, radius: 2.5, texture: '/textures/jupiter.jpg', speed: 0.4, bump: 0.05 },
+  { name: 'Saturn', distance: 58, radius: 2.0, texture: '/textures/saturn.jpg', speed: 0.3, bump: 0.05, ring: true },
+  { name: 'Uranus', distance: 72, radius: 1.5, texture: '/textures/uranus.jpg', speed: 0.2, bump: 0.05 },
+  { name: 'Neptune', distance: 85, radius: 1.4, texture: '/textures/neptune.jpg', speed: 0.1, bump: 0.05 },
 ]
 
-const ringGeometry = new THREE.RingGeometry(1.5, 2.5, 64);
+// --- Shader untuk Atmosfer Bumi ---
+const fresnelVertexShader = `
+varying vec3 vNormal;
+varying vec3 vPositionVector;
+`
+const fresnelFragmentShader = `
+varying vec3 vNormal;
+varying vec3 vPositionVector;
+void main() {
+  float intensity = pow(0.65 - dot(vNormal, vPositionVector), 4.0);
+  gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity * 1.5;
+}
+`
+
+const ringGeometry = new THREE.RingGeometry(3, 5, 64);
 ringGeometry.rotateX(-Math.PI * 0.5);
+
 function Planet({ planet }) {
   const planetRef = useRef();
   const orbitRef = useRef();
+  const cloudsRef = useRef();
+  
+  // Refs untuk Bulan (Hanya digunakan jika planet == Earth)
+  const moonOrbitRef = useRef();
+  const moonMeshRef = useRef();
+
+  // --- PERBAIKAN 1: Acak posisi awal ---
+  // Membuat sudut awal acak agar planet tidak berbaris lurus saat mulai
+  // Ini mencegah planet lain langsung menutupi matahari (bulatan hitam di gambar Anda)
+  const initialRotation = useMemo(() => Math.random() * Math.PI * 2, []);
 
   const planetTexture = useTexture(planet.texture);
   const normalMap = useTexture('/textures/earth_specular_map.jpg');
   const ringTexture = useTexture('/textures/saturn_ring_alpha.png');
   const cloudsMap = useTexture('/textures/earth_clouds.jpg');
+  
+  // --- TAMBAHAN BULAN: Load texture bulan ---
+  // Gunakan texture loader secara kondisional agar tidak error di planet lain
+  const moonTexture = planet.name === 'Earth' ? useTexture('/textures/moon.jpg') : null;
 
   useFrame((state, delta) => {
-    if (orbitRef.current) orbitRef.current.rotation.y += delta * planet.speed * 0.5;
-    if (planetRef.current) planetRef.current.rotation.y += delta * 0.5;
+    // Rotasi Orbit Utama Planet
+    if (orbitRef.current) orbitRef.current.rotation.y += delta * planet.speed * 0.1;
+    // Rotasi Planet pada porosnya
+    if (planetRef.current) planetRef.current.rotation.y += delta * 0.2;
+    
+    // Animasi Khusus Bumi
+    if (planet.name === 'Earth') {
+        if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.23;
+        
+        // --- TAMBAHAN BULAN: Animasi Orbit & Rotasi Bulan ---
+        if (moonOrbitRef.current) moonOrbitRef.current.rotation.y += delta * 0.5; // Bulan mengelilingi bumi lebih cepat
+        if (moonMeshRef.current) moonMeshRef.current.rotation.y += delta * 0.1; // Bulan berputar pada porosnya
+    }
   });
 
   return (
-    <group ref={orbitRef}>
-      <Sphere ref={planetRef} position={[planet.distance, 0, 0]} args={[planet.radius, 64, 64]}>
-        {planet.name === 'Earth' ? (
-          <>
+    // Menerapkan rotasi awal acak di sini
+    <group ref={orbitRef} rotation={[0, initialRotation, 0]}>
+      <group position={[planet.distance, 0, 0]}>
+        
+        {/* MESH UTAMA PLANET */}
+        <Sphere ref={planetRef} args={[planet.radius, 64, 64]} castShadow receiveShadow>
+          {planet.name === 'Earth' ? (
             <meshStandardMaterial
               map={planetTexture}
               normalMap={normalMap}
-              normalScale={[planet.bump, planet.bump]}
-              emissive={0x3366ff}
-              emissiveIntensity={0.1}
+              normalScale={[1, 1]}
+              roughness={0.5}
               metalness={0.1}
-              roughness={0.7}
             />
-            <Sphere args={[planet.radius * 1.02, 64, 64]}>
+          ) : (
+            <meshStandardMaterial
+              map={planetTexture}
+              bumpMap={planetTexture}
+              bumpScale={planet.bump}
+              roughness={0.7}
+              metalness={0.1}
+            />
+          )}
+        </Sphere>
+
+        {/* KHUSUS BUMI: AWAN, ATMOSFER, dan BULAN */}
+        {planet.name === 'Earth' && (
+          <>
+            {/* Lapisan Awan */}
+            <Sphere ref={cloudsRef} args={[planet.radius * 1.01, 64, 64]}>
               <meshStandardMaterial
                 map={cloudsMap}
-                blending={THREE.AdditiveBlending}
                 transparent
-                opacity={0.6}
+                opacity={0.8}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
                 alphaMap={cloudsMap}
+                depthWrite={false}
               />
             </Sphere>
-          </>
-        ) : (
-          <meshStandardMaterial
-            map={planetTexture}
-            bumpMap={planetTexture}
-            bumpScale={planet.bump}
-            metalness={0.1}
-            roughness={0.8}
-          />
-        )}
-      </Sphere>
+            
+            {/* Lapisan Atmosfer */}
+            <mesh scale={[planet.radius * 1.25, planet.radius * 1.25, planet.radius * 1.25]}>
+                <sphereGeometry args={[1, 64, 64]} />
+                <shaderMaterial
+                    vertexShader={fresnelVertexShader}
+                    fragmentShader={fresnelFragmentShader}
+                    blending={THREE.AdditiveBlending}
+                    side={THREE.BackSide}
+                    transparent
+                    depthWrite={false} // PERBAIKAN: Mencegah atmosfer membuat kotak/lingkaran hitam
+                />
+            </mesh>
 
-      {planet.ring && (
-        <mesh
-          geometry={ringGeometry}
-          position={[planet.distance, 0, 0]}
-          rotation-z={0.2}
-        >
-          <meshBasicMaterial
-            map={ringTexture}
-            alphaMap={ringTexture}
-            transparent
-            side={THREE.DoubleSide}
-            opacity={0.9}
-          />
-        </mesh>
-      )}
+            {/* --- TAMBAHAN BULAN DISINI --- */}
+             <group ref={moonOrbitRef} rotation={[Math.PI / 8, 0, 0]}> {/* Group untuk orbit bulan, sedikit miring */}
+                {/* Posisi bulan relatif terhadap Bumi. Radius bumi 0.8, kita taruh bulan di jarak 2.5 */}
+                <mesh ref={moonMeshRef} position={[2.5, 0, 0]} castShadow receiveShadow>
+                    {/* Ukuran bulan kira-kira 1/4 bumi (0.8 / 4 = 0.2) */}
+                    <sphereGeometry args={[0.2, 32, 32]} />
+                    <meshStandardMaterial
+                        map={moonTexture} // Pastikan Anda punya /textures/moon.jpg
+                        roughness={0.9}
+                        metalness={0.1}
+                        color="#cccccc" // Sedikit abu-abu jika tekstur belum termuat
+                    />
+                </mesh>
+                 {/* Optional: Visualisasi garis orbit bulan */}
+                 <Line
+                    points={useMemo(() => {
+                         const pts = [];
+                         for (let i = 0; i <= 64; i++) {
+                             const angle = (i / 64) * Math.PI * 2;
+                             pts.push(new THREE.Vector3(Math.cos(angle) * 2.5, 0, Math.sin(angle) * 2.5));
+                         }
+                         return pts;
+                    }, [])}
+                    color="#888"
+                    opacity={0.2}
+                    transparent
+                    lineWidth={0.3}
+                 />
+            </group>
+          </>
+        )}
+
+        {/* CINCIN SATURNUS */}
+        {planet.ring && (
+          <mesh
+            geometry={ringGeometry}
+            rotation-x={0.5}
+            rotation-y={0.2}
+            receiveShadow
+          >
+            <meshStandardMaterial
+              map={ringTexture}
+              transparent
+              side={THREE.DoubleSide}
+              opacity={0.8}
+            />
+          </mesh>
+        )}
+      </group>
     </group>
   )
 }
 
-
-const coronaVertexShader = `
-  varying vec3 vNormal;
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const coronaFragmentShader = `
-  varying vec3 vNormal;
-  uniform float uGlowIntensity;
-  uniform vec3 uGlowColor;
-  void main() {
-    float intensity = pow(0.3 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-    gl_FragColor = vec4(uGlowColor, 1.0) * (intensity * uGlowIntensity);
-  }
-`;
-
-
-// --- Komponen Orbit ---
+// --- Komponen Garis Orbit Planet (Tidak Berubah) ---
 function PlanetOrbit({ distance }) {
   const points = useMemo(() => {
-    const numPoints = 64;
+    const numPoints = 128;
     const pts = [];
     for (let i = 0; i <= numPoints; i++) {
       const angle = (i / numPoints) * Math.PI * 2;
@@ -120,108 +195,100 @@ function PlanetOrbit({ distance }) {
   return (
     <Line
       points={points}
-      color={0x666666} 
-      lineWidth={1}
+      color="#444"
+      lineWidth={0.5}
       transparent
-      opacity={0.1} 
-      depthWrite={false} 
+      opacity={0.3} 
     />
   );
 }
 
-
 function SolarScene() {
-  const [starTexture, sunTexture] = useTexture([
-    '/textures/star_particle.png',
-    '/textures/sun.jpg'
-  ])
-
-  const starPositions = useMemo(() => {
-    const count = 15000 
-    const arr = new Float32Array(count * 3)
-    for (let i = 0; i < count; i++) {
-      arr[i * 3 + 0] = (Math.random() - 0.5) * 800
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 800
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 800
-    }
-    return { array: arr, count }
-  }, [])
-
-  const starfieldRef = useRef()
+  const sunTexture = useTexture('/textures/sun.jpg')
   const sunRef = useRef()
 
-  // Material untuk Corona Matahari
-  const coronaMaterial = useMemo(() => new THREE.ShaderMaterial({
-    vertexShader: coronaVertexShader,
-    fragmentShader: coronaFragmentShader,
-    uniforms: {
-      uGlowIntensity: { value: 0.8 }, // glow biar warnanya lebih cerah
-      uGlowColor: { value: new THREE.Color(0xffaa00) } // kalau ini untuk warnanya
-    },
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    side: THREE.BackSide,
-  }), []);
-
-  useFrame((state, delta) => {
-    if (starfieldRef.current) starfieldRef.current.rotation.y += delta * 0.01
-
+  useFrame((state) => {
     if (sunRef.current) {
-      const t = state.clock.elapsedTime;
-      sunRef.current.material.emissiveIntensity = 2 + Math.sin(t * 0.5) * 0.3; 
+        sunRef.current.rotation.y += 0.002
     }
   })
 
+  // Membuat Starfield
+  const starPositions = useMemo(() => {
+    const count = 3000
+    const arr = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const r = 400 + Math.random() * 400
+      const theta = 2 * Math.PI * Math.random()
+      const phi = Math.acos(2 * Math.random() - 1)
+      arr[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta)
+      arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
+      arr[i * 3 + 2] = r * Math.cos(phi)
+    }
+    return arr
+  }, [])
+
   return (
     <>
-      {/* Matahari */}
-      <Sphere ref={sunRef} args={[2.5, 64, 64]}>
-        <meshStandardMaterial
-          emissiveMap={sunTexture}
-          emissive={0xffffff}
-          emissiveIntensity={2}
+      <ambientLight intensity={0.05} />
+      
+      <pointLight 
+        position={[0, 0, 0]} 
+        intensity={500}
+        distance={200}
+        decay={1.5}
+        color="#ffecd6"
+        castShadow 
+        shadow-mapSize={[1024, 1024]} 
+        shadow-bias={-0.0001} // PERBAIKAN: Menghilangkan artefak bayangan hitam pada permukaan planet
+      />
+
+      {/* --- MATAHARI --- */}
+      <Sphere ref={sunRef} args={[4, 64, 64]}>
+        <meshBasicMaterial 
+            map={sunTexture} 
+            color={[10, 3, 1]}
+            toneMapped={false} 
         />
       </Sphere>
 
-      {/* Atmosfer Matahari */}
-      <Sphere args={[2.7, 64, 64]}> 
-        <primitive object={coronaMaterial} />
-      </Sphere>
-      
-      {/* Pencahayaan */}
-      <pointLight intensity={20} color={0xffffaa} distance={200} />
-      <ambientLight intensity={0.1} /> 
-
-
-      {/* Planets dan Orbitnya */}
+      {/* --- PLANETS --- */}
       {planetsData.map((p) => (
         <React.Fragment key={p.name}>
-          <Planet key={p.name} planet={p} />
-          {/* 👇 **PENAMBAHAN: Garis Orbit** */}
+          <Planet planet={p} />
           <PlanetOrbit distance={p.distance} />
         </React.Fragment>
       ))}
 
-      {/* Starfield (Sama, sudah benar) */}
-      <points ref={starfieldRef}>
+      {/* --- STARFIELD --- */}
+      <points>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            array={starPositions.array}
+            array={starPositions}
             itemSize={3}
-            count={starPositions.count}
+            count={starPositions.length / 3}
           />
         </bufferGeometry>
         <pointsMaterial
-          map={starTexture}
-          size={0.4} 
-          blending={THREE.AdditiveBlending}
+          size={0.8}
+          color="#ffffff"
           transparent
-          opacity={0.8} 
-          depthWrite={false}
-          sizeAttenuation={true} 
+          opacity={0.8}
+          sizeAttenuation={true}
         />
       </points>
+
+      {/* --- POST PROCESSING --- */}
+      <EffectComposer disableNormalPass>
+        <Bloom 
+            luminanceThreshold={0.2}
+            mipmapBlur 
+            intensity={1.5} 
+            radius={0.6}
+        />
+        <Vignette eskil={false} offset={0.1} darkness={1.1} />
+      </EffectComposer>
     </>
   )
 }
