@@ -1,36 +1,37 @@
 uniform float uTime;
 uniform float uSize;
 
-attribute vec3 color;
+attribute float aScale;
+attribute vec3 aRandomness;
 
 varying vec3 vColor;
-
-mat4 rotationMatrix(vec3 axis, float angle) {
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-
-    return mat4(
-        oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-        oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-        oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-}
 
 void main() {
     vColor = color;
 
-    float angle = uTime * 0.5;
-    mat4 rotMatrix = rotationMatrix(vec3(0.0, 1.0, 0.0), angle);
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    float distanceToCenter = length(modelPosition.xz);
     
-    // Apply rotation to the position
-    vec4 newPosition = rotMatrix * vec4(position, 1.0);
+    float angleOffset = (1.0 / distanceToCenter) * uTime * 0.2;
+    
+    angleOffset += aRandomness.x * 0.5;
 
-    vec4 mvPosition = modelViewMatrix * newPosition;
-    gl_Position = projectionMatrix * mvPosition;
+    float angle = atan(modelPosition.x, modelPosition.z);
+    angle += angleOffset;
 
-    // Ensure point size scales correctly with distance
-    gl_PointSize = uSize / max(-mvPosition.z, 0.1);
+    modelPosition.x = cos(angle) * distanceToCenter;
+    modelPosition.z = sin(angle) * distanceToCenter;
+
+    modelPosition.y += sin(uTime * 0.5 + distanceToCenter) * 0.2;
+
+    vec4 viewPosition = viewMatrix * modelPosition;
+    vec4 projectedPosition = projectionMatrix * viewPosition;
+
+    gl_Position = projectedPosition;
+
+    gl_PointSize = uSize * aScale;
+    gl_PointSize *= (1.0 / -viewPosition.z);
+
+    gl_PointSize *= (1.0 + sin(uTime * 3.0 + aRandomness.y * 20.0) * 0.5);
 }
