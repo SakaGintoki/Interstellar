@@ -10,8 +10,6 @@ function ScrollPrompt() {
     if (currentScale !== 'atom') {
       setVisible(false)
     }
-    // [PERBAIKAN]: Menambahkan dependency array agar
-    // komponen ini "sadar" ketika currentScale berubah.
   }, [currentScale])
 
   if (!visible) return null

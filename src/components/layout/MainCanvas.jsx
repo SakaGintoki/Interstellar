@@ -93,7 +93,6 @@ const handleCreated = ({ scene }) => {
               value: new THREE.Vector3(0, 0, 0),
             };
 
-          // 🔥 NEW: force all shader materials’ uOpacity to 0 on startup
           if (m.uniforms.uOpacity) {
             m.uniforms.uOpacity.value = 0.0;
           }

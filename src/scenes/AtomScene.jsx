@@ -1,15 +1,24 @@
 import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Sphere, Trail } from "@react-three/drei";
+import {
+  Sphere,
+  Trail,
+  Float,
+  Line,
+  Stars,
+  OrbitControls,
+} from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 
-// --- CONSTANTS ---
-const ORBIT_RADIUS = 3.5;
-const ELECTRON_SPEED_1 = 1.5;
-const ELECTRON_SPEED_2 = 1.8;
-const ELECTRON_SPEED_3 = 2.1;
+// --- CONSTANTS & CONFIG ---
+const ELECTRONS = [
+  { radius: 2.5, speed: 1.5, rotation: [0, 0, 0], color: "#00ffff" }, // Orbit Datar
+  { radius: 3.0, speed: 1.8, rotation: [Math.PI / 3, 0, 0], color: "#ff00ff" }, // Miring 60 derajat
+  { radius: 3.5, speed: 2.1, rotation: [-Math.PI / 3, 0, 0], color: "#ffffff" }, // Miring -60 derajat
+];
 
-// --- GLOW SHADER (same as yours) ---
+// --- FRESNEL GLOW SHADER (Diperbaiki agar lebih halus) ---
 const glowVertexShader = `
   varying vec3 vNormal;
   varying vec3 vViewDirection;
@@ -20,231 +29,215 @@ const glowVertexShader = `
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
+
 const glowFragmentShader = `
-  precision highp float;
   uniform vec3 uGlowColor;
   uniform float uGlowPower;
   varying vec3 vNormal;
   varying vec3 vViewDirection;
   void main() {
-    float fresnel = dot(vNormal, vViewDirection) + 1.0;
+    float fresnel = dot(vNormal, vViewDirection);
+    fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
     fresnel = pow(fresnel, uGlowPower);
-    gl_FragColor = vec4(uGlowColor * fresnel, fresnel * 0.5);
+    gl_FragColor = vec4(uGlowColor, fresnel);
   }
 `;
 
-// ---------- EXTRA AMBIENCE COMPONENTS ----------
+// ---------- NUCLEUS COMPONENT ----------
+function Nucleus() {
+  const meshRef = useRef();
 
-// Big inverted sphere giving the atom a colored environment
-function AmbientGlow({ color = "#021226", intensity = 0.8, radius = 1000 }) {
-  return (
-    <mesh scale={radius}>
-      <sphereGeometry args={[1, 32, 32]} />
-      <meshStandardMaterial
-        side={THREE.BackSide}
-        color={color}
-        emissive={color}
-        emissiveIntensity={intensity}
-        transparent
-        opacity={0.85}
-        toneMapped={false}
-      />
-    </mesh>
-  );
-}
-
-// Tiny “quantum mist” particles around the atom
-function ElectronMist({ count = 350, radius = 8 }) {
-  const pointsRef = useRef();
-
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const r = radius * Math.random() * 0.9;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-
-      const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = r * Math.sin(phi) * Math.sin(theta);
-      const z = r * Math.cos(phi);
-
-      const idx = i * 3;
-      arr[idx] = x;
-      arr[idx + 1] = y;
-      arr[idx + 2] = z;
+  // Acak posisi proton/neutron sedikit agar terlihat seperti cluster alami
+  const particles = useMemo(() => {
+    const temp = [];
+    // Proton (Warna Cyan)
+    for (let i = 0; i < 6; i++) {
+      temp.push({
+        pos: [
+          Math.random() * 0.3 - 0.15,
+          Math.random() * 0.3 - 0.15,
+          Math.random() * 0.3 - 0.15,
+        ],
+        color: new THREE.Color("#00aaff"),
+        type: "proton",
+      });
     }
-    return arr;
-  }, [count, radius]);
+    // Neutron (Warna Ungu Gelap)
+    for (let i = 0; i < 7; i++) {
+      temp.push({
+        pos: [
+          Math.random() * 0.3 - 0.15,
+          Math.random() * 0.3 - 0.15,
+          Math.random() * 0.3 - 0.15,
+        ],
+        color: new THREE.Color("#5500ff"),
+        type: "neutron",
+      });
+    }
+    return temp;
+  }, []);
 
-  useFrame(({ clock }) => {
-    if (!pointsRef.current) return;
-    const t = clock.getElapsedTime();
-
-    // slow rotation & tiny breathing
-    pointsRef.current.rotation.y = t * 0.15;
-    pointsRef.current.rotation.x = Math.sin(t * 0.25) * 0.1;
-  });
-
-  return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          array={positions}
-          count={count}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.08}
-        color="#66e5ff"
-        transparent
-        opacity={0.6}
-        depthWrite={false}
-        sizeAttenuation
-      />
-    </points>
-  );
-}
-
-// ---------- MAIN COMPONENT ----------
-function AtomScene() {
-  const nucleusRef = useRef();
-
-  const electron1Ref = useRef();
-  const electron2Ref = useRef();
-  const electron3Ref = useRef();
-
-  // Glow material around nucleus
-  const shaderMaterial = useMemo(
+  const glowMaterial = useMemo(
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          uGlowColor: { value: new THREE.Color(0x00aaff) },
-          uGlowPower: { value: 3.5 },
-          opacity: { value: 1.0 },
+          // uGlowColor: { value: new THREE.Color("#00ffff") },
+          uGlowPower: { value: 4.5 }, // Naikkan (misal 4.0 - 6.0) agar glow lebih tipis di pinggir
+          uGlowPower: { value: 2.0 },
         },
         vertexShader: glowVertexShader,
         fragmentShader: glowFragmentShader,
         transparent: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
-        side: THREE.BackSide,
+        side: THREE.FrontSide, // Render bagian depan saja agar tidak aneh
       }),
     []
   );
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const t = state.clock.getElapsedTime();
+    if (meshRef.current) {
+      // Rotasi lambat nucleus
+      meshRef.current.rotation.y = t * 0.2;
+      meshRef.current.rotation.z = t * 0.1;
 
-    // Rotate nucleus slightly
-    if (nucleusRef.current) {
-      nucleusRef.current.rotation.y += delta * 0.4;
-
-      // subtle breathing scale
-      const s = 1 + Math.sin(t * 2.0) * 0.05;
-      nucleusRef.current.scale.set(s, s, s);
-    }
-
-    // Electron orbits
-    if (electron1Ref.current) {
-      electron1Ref.current.position.set(
-        Math.cos(t * ELECTRON_SPEED_1) * ORBIT_RADIUS,
-        0,
-        Math.sin(t * ELECTRON_SPEED_1) * ORBIT_RADIUS
-      );
-    }
-    if (electron2Ref.current) {
-      electron2Ref.current.position.set(
-        0,
-        Math.cos(t * ELECTRON_SPEED_2) * ORBIT_RADIUS,
-        Math.sin(t * ELECTRON_SPEED_2) * ORBIT_RADIUS
-      );
-    }
-    if (electron3Ref.current) {
-      electron3Ref.current.position.set(
-        Math.cos(t * ELECTRON_SPEED_3) * ORBIT_RADIUS,
-        Math.sin(t * ELECTRON_SPEED_3) * ORBIT_RADIUS,
-        0
-      );
+      // Detak jantung (Pulse)
+      const scale = 1 + Math.sin(t * 3) * 0.05;
+      meshRef.current.scale.set(scale, scale, scale);
     }
   });
 
   return (
+    <group ref={meshRef}>
+      {/* Inti Partikel */}
+      {particles.map((p, i) => (
+        <Sphere key={i} args={[0.12, 16, 16]} position={p.pos}>
+          <meshStandardMaterial
+            color={p.color}
+            emissive={p.color}
+            emissiveIntensity={4} // High intensity for Bloom
+            roughness={0.1}
+            metalness={0.8}
+          />
+        </Sphere>
+      ))}
+
+      {/* Energy Shield (Glow Shader) */}
+      <Sphere args={[0.65, 32, 32]}>
+        <primitive attach="material" object={glowMaterial} />
+      </Sphere>
+
+      {/* Core Light Point */}
+      <pointLight distance={3} intensity={5} color="#00ffff" />
+    </group>
+  );
+}
+
+// ---------- ELECTRON COMPONENT ----------
+function Electron({ radius, speed, rotation, color }) {
+  const ref = useRef();
+
+  // Membuat garis orbit (Cincin tipis)
+  const orbitPoints = useMemo(() => {
+    const points = [];
+    for (let i = 0; i <= 64; i++) {
+      const angle = (i / 64) * Math.PI * 2;
+      points.push(
+        new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius)
+      );
+    }
+    return points;
+  }, [radius]);
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime() * speed;
+    // Menggerakkan elektron memutar
+    if (ref.current) {
+      ref.current.position.x = Math.cos(t) * radius;
+      ref.current.position.z = Math.sin(t) * radius;
+    }
+  });
+
+  return (
+    <group rotation={rotation}>
+      {/* Garis Orbit Tipis */}
+      <Line
+        points={orbitPoints}
+        color={color}
+        opacity={0.15}
+        transparent
+        lineWidth={2} // Rekomendasi ketebalan
+        depthWrite={false}
+        toneMapped={false}
+        // TAMBAHKAN INI:
+        frustumCulled={false}
+      />
+      {/* Elektron + Trail */}
+      <group ref={ref}>
+        <Trail
+          width={0.8} // Lebar trail
+          length={8} // Panjang trail
+          color={new THREE.Color(color)}
+          attenuation={(t) => t * t} // Ekor menipis
+        >
+          <Sphere args={[0.08, 16, 16]}>
+            <meshBasicMaterial color={[10, 10, 20]} toneMapped={false} />
+            {/* toneMapped=false agar warna putihnya "menembus" batas HDR */}
+          </Sphere>
+        </Trail>
+
+        {/* Glow Sphere di sekeliling elektron */}
+        <pointLight distance={1.5} intensity={2} color={color} />
+      </group>
+    </group>
+  );
+}
+
+// ---------- MAIN SCENE ----------
+function AtomScene() {
+  return (
     <>
-      {/* Ambient environment */}
-      <AmbientGlow color="#020b1c" intensity={0.9} radius={35} />
-      <ElectronMist count={400} radius={9} />
+      <color attach="background" args={["#050510"]} />
 
-      {/* Lighting */}
-      <ambientLight intensity={0.25} />
-      <pointLight position={[0, 0, 0]} intensity={2.0} color={0x66ccff} />
-      <pointLight position={[6, 4, 8]} intensity={0.8} color={0xffffff} />
-      <pointLight position={[-5, -3, -6]} intensity={0.6} color={0x88aaff} />
+      {/* Kontrol Kamera */}
+      {/* <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} minDistance={5} maxDistance={20} /> */}
+      <OrbitControls makeDefault minDistance={5} maxDistance={20} />
 
-      {/* Nucleus */}
-      <Sphere ref={nucleusRef} args={[0.5, 32, 32]} position={[0, 0, 0]}>
-        <meshStandardMaterial
-          color={0xffffaa}
-          emissive={0xffffaa}
-          emissiveIntensity={3}
-          roughness={0.3}
-          metalness={0.1}
-        />
-      </Sphere>
+      {/* Efek Bintang Latar Belakang */}
+      <Stars
+        radius={100}
+        depth={50}
+        count={5000}
+        factor={4}
+        saturation={0}
+        fade
+        speed={1}
+      />
 
-      {/* Nucleus glow shell */}
-      <Sphere args={[0.6, 32, 32]} position={[0, 0, 0]}>
-        <primitive attach="material" object={shaderMaterial} />
-      </Sphere>
+      {/* Lighting Scene */}
+      <ambientLight intensity={0.2} />
+      <pointLight position={[10, 10, 10]} intensity={1} color="#4444ff" />
 
-      {/* Electron 1 */}
-      <mesh ref={electron1Ref}>
-        <sphereGeometry args={[0.1, 16, 16]} />
-        <meshStandardMaterial
-          color={0x00ffff}
-          emissive={0x00ffff}
-          emissiveIntensity={5}
-        />
-        <Trail
-          width={0.2}
-          length={6}
-          color={new THREE.Color(0x00ffff)}
-          attenuation={(t) => t * t}
-        />
-      </mesh>
+      {/* Float membuat seluruh atom melayang naik turun pelan */}
+      <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+        <Nucleus />
 
-      {/* Electron 2 */}
-      <mesh ref={electron2Ref}>
-        <sphereGeometry args={[0.1, 16, 16]} />
-        <meshStandardMaterial
-          color={0x00ffff}
-          emissive={0x00ffff}
-          emissiveIntensity={5}
-        />
-        <Trail
-          width={0.2}
-          length={6}
-          color={new THREE.Color(0x00ffff)}
-          attenuation={(t) => t * t}
-        />
-      </mesh>
+        {ELECTRONS.map((props, i) => (
+          <Electron key={i} {...props} />
+        ))}
+      </Float>
 
-      {/* Electron 3 */}
-      <mesh ref={electron3Ref}>
-        <sphereGeometry args={[0.1, 16, 16]} />
-        <meshStandardMaterial
-          color={0x00ffff}
-          emissive={0x00ffff}
-          emissiveIntensity={5}
+      {/* --- POST PROCESSING (BLOOM) --- */}
+      {/* Efek ini yang membuat benda "bersinar" */}
+      <EffectComposer disableNormalPass>
+        <Bloom
+          luminanceThreshold={1} // Hanya benda sangat terang yang kena bloom
+          mipMapBlur // Blur halus
+          intensity={1.5} // Kekuatan cahaya
+          radius={0.6} // Radius sebaran cahaya
         />
-        <Trail
-          width={0.2}
-          length={6}
-          color={new THREE.Color(0x00ffff)}
-          attenuation={(t) => t * t}
-        />
-      </mesh>
+      </EffectComposer>
     </>
   );
 }

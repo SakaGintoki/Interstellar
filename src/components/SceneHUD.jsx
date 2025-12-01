@@ -35,19 +35,26 @@ const SCENE_COPY = {
 };
 
 // Shared paragraph (for now)
-const LOREM =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-
+const SCENE_PARAGRAPH = {
+  atom: `Atom adalah tata surya terkecil penyusun semesta. Intinya padat layaknya matahari, dikelilingi elektron yang mengorbit cepat. Inilah blok bangunan dasar dari semua materi yang Anda sentuh.`,
+  dna: `DNA adalah kode rahasia kehidupan Anda. Molekul ini menyimpan instruksi lengkap dari orang tua, menentukan segala sifat unik tubuh dan memastikan cerita kehidupan terus berlanjut.`,
+  cell: `Sel adalah pabrik mikroskopis yang tak pernah tidur. Unit terkecil ini bekerja nonstop mengubah makanan menjadi energi dan menjalankan instruksi tubuh agar Anda tetap hidup dan bergerak.`,
+  earth: `Bumi dan Bulan adalah pasangan dansa abadi. Gravitasi mengikat keduanya, di mana Bulan menjaga kestabilan putaran Bumi dan mengatur irama pasang surut lautan kita.`,
+  solar: `Tata surya adalah keluarga besar planet yang mengelilingi Matahari. Dari planet batuan hingga raksasa gas, semuanya berdansa mengelilingi satu titik api kehidupan karena ikatan gravitasi yang kuat.`,
+  galaxy: `Galaksi adalah kota metropolitan bertabur bintang. Pusatnya yang terang benderang mengikat ratusan miliar tata surya termasuk milik kita dalam satu putaran gravitasi yang megah.`,
+  universe: `Universe adalah samudra kosmik tanpa tepi. Galaksi-galaksi hanyalah pulau cahaya kecil yang tersebar di dalamnya. Ini adalah wadah mahaluas tempat semua sejarah dan masa depan terjadi.`,
+}
 export function SceneHUD() {
-  const currentScale = useSceneStore((s) => s.currentScale) || "atom";
+   const currentScale = useSceneStore((s) => s.currentScale) || "atom";
   const { title, tagline } = SCENE_COPY[currentScale] || SCENE_COPY.atom;
+
+  const paragraph = SCENE_PARAGRAPH[currentScale] || "";
 
   const [displayTitle, setDisplayTitle] = useState("");
   const [displayTagline, setDisplayTagline] = useState("");
   const [displayParagraph, setDisplayParagraph] = useState("");
 
   useEffect(() => {
-    // Clear previous content
     setDisplayTitle("");
     setDisplayTagline("");
     setDisplayParagraph("");
@@ -107,19 +114,17 @@ export function SceneHUD() {
     }
 
     // --- Paragraph: fast type, no erase ---
-    const paraSpeed = 8; // ms per character (fast)
-    for (let i = 0; i < LOREM.length; i++) {
+    const paraSpeed = 8;
+    for (let i = 0; i < paragraph.length; i++) {
       timeouts.push(
         setTimeout(() => {
-          setDisplayParagraph(LOREM.slice(0, i + 1));
+          setDisplayParagraph(paragraph.slice(0, i + 1));
         }, i * paraSpeed)
       );
     }
 
-    return () => {
-      timeouts.forEach(clearTimeout);
-    };
-  }, [currentScale, title, tagline]);
+    return () => timeouts.forEach(clearTimeout);
+  }, [currentScale, title, tagline, paragraph]);
 
   return (
     <div
