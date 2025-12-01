@@ -165,7 +165,7 @@ function Electron({ radius, speed, rotation, color }) {
       <Line
         points={orbitPoints}
         color={color}
-        opacity={0.15}
+        opacity={0.35}
         transparent
         lineWidth={2} // Rekomendasi ketebalan
         depthWrite={false}
@@ -201,8 +201,8 @@ function AtomScene() {
       <color attach="background" args={["#050510"]} />
 
       {/* Kontrol Kamera */}
-      {/* <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} minDistance={5} maxDistance={20} /> */}
-      <OrbitControls makeDefault minDistance={5} maxDistance={20} />
+      <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} minDistance={5} maxDistance={20} />
+      {/* <OrbitControls makeDefault minDistance={5} maxDistance={20} /> */}
 
       {/* Efek Bintang Latar Belakang */}
       <Stars
