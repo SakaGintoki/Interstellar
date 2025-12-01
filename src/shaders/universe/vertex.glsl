@@ -1,16 +1,14 @@
-/*
- HAPUS: 'varying vec3 position;'
- 'position' adalah atribut bawaan.
-*/
-
-/* 'out' diganti menjadi 'varying' */
-varying vec3 vRayDirection;
+varying vec2 vUv;
+varying vec3 vPosition;
+varying vec3 vWorldPosition;
 
 void main() {
-    /* Gunakan 'position' (bawaan) */
-    vec4 worldPos = modelMatrix * vec4(position, 1.0);
-    vRayDirection = normalize(worldPos.xyz - cameraPosition);
+    vUv = uv;
+    vPosition = position;
+    
+    // sementara kamera/mesh berputar.
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
 
-    // Ensure correct transformation for gl_Position
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
 }

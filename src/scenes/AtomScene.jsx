@@ -194,7 +194,6 @@ function Electron({ radius, speed, rotation, color }) {
   );
 }
 
-// ---------- MAIN SCENE ----------
 function AtomScene() {
   return (
     <>
