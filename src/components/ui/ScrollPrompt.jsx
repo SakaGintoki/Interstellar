@@ -5,7 +5,6 @@ function ScrollPrompt() {
   const [visible, setVisible] = useState(true);
   const currentScale = useSceneStore((state) => state.currentScale);
 
-  // Hide the prompt once the user starts scrolling
   useEffect(() => {
     if (currentScale !== "atom") {
       setVisible(false);
@@ -15,11 +14,16 @@ function ScrollPrompt() {
   if (!visible) return null;
 
   return (
-    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center animate-pulse">
-      <p className="text-sm opacity-80">Scroll to zoom in or out</p>
-      <div className="w-6 h-10 border-2 border-white rounded-full mx-auto mt-2 relative">
-        <div className="w-1 h-2 bg-white rounded-full absolute left-1/2 -translate-x-1/2 top-2 animate-bounce"></div>
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 transform text-white text-center animate-pulse z-50 pointer-events-none">
+      
+      <p className="text-[10px] md:text-xs font-mono tracking-[0.2em] uppercase opacity-80 mb-2 drop-shadow-md">
+        Scroll to Explore
+      </p>
+
+      <div className="w-5 h-8 border border-white/60 rounded-full mx-auto relative backdrop-blur-md bg-black/10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+        <div className="w-1 h-1.5 bg-cyan-400 rounded-full absolute left-1/2 -translate-x-1/2 top-1.5 animate-bounce"></div>
       </div>
+
     </div>
   );
 }
