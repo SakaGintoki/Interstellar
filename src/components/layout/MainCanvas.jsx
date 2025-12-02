@@ -207,7 +207,7 @@ const handleCreated = ({ scene }) => {
   </button>
   
   {/* 🔍 Right-side log window overlay */}
-      <div
+      {/* <div
         style={{
           position: "fixed",
           top: 10,
@@ -224,11 +224,11 @@ const handleCreated = ({ scene }) => {
           zIndex: 35,
           pointerEvents: "none", // so you can still drag orbit in the canvas
         }}
-      >
-        <div style={{ marginBottom: 4, opacity: 0.8 }}>
+      > */}
+        {/* <div style={{ marginBottom: 4, opacity: 0.8 }}>
           Camera log (latest on top)
-        </div>
-        {logs.map((entry) => (
+        </div> */}
+        {/* {logs.map((entry) => (
           <div key={entry.id} style={{ marginBottom: 2 }}>
             <div>{entry.label}</div>
             <div style={{ opacity: 0.8 }}>
@@ -239,8 +239,8 @@ const handleCreated = ({ scene }) => {
               [{entry.to.map((v) => v.toFixed(1)).join(", ")}]
             </div>
           </div>
-        ))}
-      </div>
+        ))} */}
+      {/* </div> */}
   
       {/* LEFT: main interactive cinematic view */}
       <Canvas
@@ -248,7 +248,8 @@ const handleCreated = ({ scene }) => {
           position: "fixed",
           top: 0,
           left: 0,
-          width: "50%",
+          // width: "50%",
+          width: "100%",
           height: "100%",
           background: "black",
         }}
@@ -311,7 +312,7 @@ const handleCreated = ({ scene }) => {
       </Canvas>
 
       {/* RIGHT: angled bird's-eye debug view */}
-      <Canvas
+      {/* <Canvas
         style={{
           position: "fixed",
           top: 0,
@@ -322,39 +323,39 @@ const handleCreated = ({ scene }) => {
         }}
         dpr={Math.min(2, window.devicePixelRatio || 1)}
       >
-        <color attach="background" args={["#111111"]} />
+        <color attach="background" args={["#111111"]} /> */}
 
         {/* Debug camera (angled, like your original) */}
-        <PerspectiveCamera
+        {/* <PerspectiveCamera
           makeDefault
           ref={debugCamRef}
           position={[30, 40, 50]}
           fov={55}
           near={0.1}
           far={50000}
-        />
+        /> */}
 
         {/* Orbit around world from this debug cam */}
-        <OrbitControls
+        {/* <OrbitControls
           enableDamping
           dampingFactor={0.15}
           rotateSpeed={0.9}
           zoomSpeed={0.9}
           panSpeed={1.0}
           target={[0, 0, 0]}
-        />
+        /> */}
 
         {/* Helpers */}
-        <axesHelper args={[20]} />
-        <gridHelper args={[300, 300]} />
+        {/* <axesHelper args={[20]} />
+        <gridHelper args={[300, 300]} /> */}
 
         {/* Shows the MAIN left camera frustum in debug view */}
-        <CameraFrustumHelper cameraRef={cameraRef} />
+        {/* <CameraFrustumHelper cameraRef={cameraRef} /> */}
 
         {/* Optionally also render your scene here */}
-        <ambientLight intensity={0.6} />
-        <SceneManager />
-      </Canvas>
+        {/* <ambientLight intensity={0.6} /> */}
+        {/* <SceneManager /> */}
+      {/* </Canvas> */}
     </>
   );
 }

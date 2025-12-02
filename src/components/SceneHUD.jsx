@@ -132,7 +132,7 @@ export function SceneHUD() {
         position: "fixed",
         top: 0,
         left: 0,
-        width: "50%",      // only over the LEFT canvas
+        width: "100%",      // only over the LEFT canvas
         height: "100%",
         pointerEvents: "none",
         zIndex: 34,
@@ -142,7 +142,7 @@ export function SceneHUD() {
       <div
         style={{
           position: "absolute",
-          top: 32, // leave some padding from top edge
+          top: 20, // leave some padding from top edge
           left: 0,
           width: "100%",
           textAlign: "center",
@@ -188,22 +188,23 @@ export function SceneHUD() {
       <div
         style={{
           position: "absolute",
-          right: 24,
-          bottom: 24,
-          maxWidth: "60%",
+          top: 64,
+          left: 24,
+          maxWidth: "20%",
         }}
       >
         <div
           style={{
             padding: "14px 18px",
             borderRadius: 18,
-            background:
-              "linear-gradient(135deg, rgba(0,0,0,0.85), rgba(10,20,40,0.9))",
+            background: "linear-gradient(135deg, rgba(0,0,0,0.85), rgba(10,20,40,0.9))",
             border: "1px solid rgba(140, 190, 255, 0.6)",
-            boxShadow:
-              "0 18px 40px rgba(0,0,0,0.7), 0 0 25px rgba(90,180,255,0.4)",
+            boxShadow: "0 18px 40px rgba(0,0,0,0.7), 0 0 25px rgba(90,180,255,0.4)",
             color: "#dfe9ff",
+            // opacity: 0.9,
+            transition: "opacity 0.3s ease-out 0.5s",
             fontSize: 13,
+            fontWeight: 400,
             lineHeight: 1.5,
             textAlign: "justify",
           }}

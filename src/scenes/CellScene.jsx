@@ -1,47 +1,62 @@
-import React, { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import React, { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import {
   Float,
   OrbitControls,
   MeshDistortMaterial,
-} from '@react-three/drei'
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
-import * as THREE from 'three'
+  Stars,
+} from "@react-three/drei";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import * as THREE from "three";
 
 // --- CONFIG: Colors and tunables (easy to tweak) ---
 const COLORS = {
-  membrane: '#a4d8fa',
-  nucleus: '#ff5e6c',
-  nucleolus: '#8a2be2',
-  golgi: '#bf8bff',
-  mitochondria: '#f0d676',
-  vesicle: '#88eebb',
-  cytoplasm: '#ffffff'
-}
+  membrane: "#a4d8fa",
+  nucleus: "#ff5e6c",
+  nucleolus: "#8a2be2",
+  golgi: "#bf8bff",
+  mitochondria: "#f0d676",
+  vesicle: "#88eebb",
+  cytoplasm: "#ffffff",
+};
 const PARAMS = {
-  membrane: { radius: 4.2, segments: 64, distort: 0.32, speed: 1.4, opacity: 0.42 },
+  membrane: {
+    radius: 4.2,
+    segments: 64,
+    distort: 0.32,
+    speed: 1.4,
+    opacity: 0.42,
+  },
   nucleus: { radius: 1.4, segments: 32 },
   sparkles: { count: 400, scale: 3.8, size: 3 },
-  mitochondriaCount: 5
-}
+  mitochondriaCount: 5,
+};
 
 // --- Utility: precreate sphere geometry to reuse ---
 function useSharedSphere(radius = 1, segments = 32) {
-  return useMemo(() => new THREE.SphereGeometry(radius, segments, segments), [radius, segments])
+  return useMemo(
+    () => new THREE.SphereGeometry(radius, segments, segments),
+    [radius, segments]
+  );
 }
 
 // --- 1) Cell membrane: MeshDistortMaterial + single sphere, memoized geometry & material ref for animation ---
 const CellMembrane = React.memo(() => {
-  const geom = useSharedSphere(PARAMS.membrane.radius, PARAMS.membrane.segments)
-  const materialRef = useRef(null)
+  const geom = useSharedSphere(
+    PARAMS.membrane.radius,
+    PARAMS.membrane.segments
+  );
+  const materialRef = useRef(null);
 
   // subtle vertex-based animation through material properties (MeshDistort handles GPU distortion)
   useFrame((state, dt) => {
     if (materialRef.current) {
       // gently vary distort to avoid static look
-      materialRef.current.distort = PARAMS.membrane.distort + Math.sin(state.clock.elapsedTime * 0.7) * 0.02
+      materialRef.current.distort =
+        PARAMS.membrane.distort +
+        Math.sin(state.clock.elapsedTime * 0.7) * 0.02;
     }
-  })
+  });
 
   return (
     <mesh geometry={geom} renderOrder={0}>
@@ -59,13 +74,13 @@ const CellMembrane = React.memo(() => {
         side={THREE.DoubleSide}
       />
     </mesh>
-  )
-})
+  );
+});
 
 // --- 2) Nucleus: layered spheres for bloom + inner nucleolus with wireframe hint ---
 const Nucleus = React.memo(() => {
-  const outerGeom = useSharedSphere(1.4, 32)
-  const innerGeom = useSharedSphere(0.6, 24)
+  const outerGeom = useSharedSphere(1.4, 32);
+  const innerGeom = useSharedSphere(0.6, 24);
 
   return (
     <group>
@@ -91,22 +106,31 @@ const Nucleus = React.memo(() => {
         </mesh>
       </Float>
     </group>
-  )
-})
+  );
+});
 
 // --- 3) Golgi: stacked flattened tori inside a Float wrapper, geometry memoized ---
-const GolgiComplex = ({ position = [0, 0, 0], rotation = [0, 0, 0], stack = 5 }) => {
+const GolgiComplex = ({
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  stack = 5,
+}) => {
   const torusGeometries = useMemo(() => {
-    return Array.from({ length: stack }).map((_, i) => (
-      new THREE.TorusGeometry(0.8 - i * 0.09, 0.1, 12, 32)
-    ))
-  }, [stack])
+    return Array.from({ length: stack }).map(
+      (_, i) => new THREE.TorusGeometry(0.8 - i * 0.09, 0.1, 12, 32)
+    );
+  }, [stack]);
 
   return (
     <group position={position} rotation={rotation}>
       <Float speed={2} rotationIntensity={0.2} floatIntensity={0.45}>
         {torusGeometries.map((g, i) => (
-          <mesh key={i} geometry={g} position={[0, (i - stack / 2) * 0.28, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh
+            key={i}
+            geometry={g}
+            position={[0, (i - stack / 2) * 0.28, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+          >
             <meshStandardMaterial
               color={COLORS.golgi}
               emissive={COLORS.golgi}
@@ -121,16 +145,18 @@ const GolgiComplex = ({ position = [0, 0, 0], rotation = [0, 0, 0], stack = 5 })
         </mesh>
       </Float>
     </group>
-  )
-}
+  );
+};
 
 // --- 4) Mitochondria: simple capsule mesh, grouped and slightly animated, geometry memoized ---
 const Mitochondrion = ({ pos = [0, 0, 0], rot = [0, 0, 0], scale = 1 }) => {
   // capsule geometry created in JSX for readability (capsule is available in recent three versions)
-  const innerRef = useRef(null)
+  const innerRef = useRef(null);
   useFrame((state) => {
-    if (innerRef.current) innerRef.current.rotation.z += Math.sin(state.clock.elapsedTime * 0.3) * 0.002
-  })
+    if (innerRef.current)
+      innerRef.current.rotation.z +=
+        Math.sin(state.clock.elapsedTime * 0.3) * 0.002;
+  });
 
   return (
     <group position={pos} rotation={rot} scale={scale}>
@@ -151,60 +177,100 @@ const Mitochondrion = ({ pos = [0, 0, 0], rot = [0, 0, 0], scale = 1 }) => {
         </mesh>
       </Float>
     </group>
-  )
-}
+  );
+};
 
 // --- 5) Sparkles / cytoplasm points: memoized buffer and subtle per-frame rotation ---
-const Sparkles = ({ count = PARAMS.sparkles.count, scale = PARAMS.sparkles.scale, size = PARAMS.sparkles.size, color = '#ccffdd' }) => {
+const Sparkles = ({
+  count = PARAMS.sparkles.count,
+  scale = PARAMS.sparkles.scale,
+  size = PARAMS.sparkles.size,
+  color = "#ccffdd",
+}) => {
   const points = useMemo(() => {
-    const arr = new Float32Array(count * 3)
+    const arr = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      const r = Math.random() * scale
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.acos(2 * Math.random() - 1)
-      const x = r * Math.sin(phi) * Math.cos(theta)
-      const y = r * Math.sin(phi) * Math.sin(theta)
-      const z = r * Math.cos(phi)
-      arr[i * 3] = x
-      arr[i * 3 + 1] = y
-      arr[i * 3 + 2] = z
+      const r = Math.random() * scale;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const x = r * Math.sin(phi) * Math.cos(theta);
+      const y = r * Math.sin(phi) * Math.sin(theta);
+      const z = r * Math.cos(phi);
+      arr[i * 3] = x;
+      arr[i * 3 + 1] = y;
+      arr[i * 3 + 2] = z;
     }
-    return arr
-  }, [count, scale])
+    return arr;
+  }, [count, scale]);
 
-  const ref = useRef()
+  const ref = useRef();
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.02
-  })
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.02;
+  });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={points.length / 3} array={points} itemSize={3} />
+        <bufferAttribute
+          attach="attributes-position"
+          count={points.length / 3}
+          array={points}
+          itemSize={3}
+        />
       </bufferGeometry>
-      <pointsMaterial size={size * 0.016} color={color} transparent opacity={0.65} sizeAttenuation />
+      <pointsMaterial
+        size={size * 0.016}
+        color={color}
+        transparent
+        opacity={0.65}
+        sizeAttenuation
+      />
     </points>
-  )
-}
+  );
+};
 
 // --- Scene: assemble, lights, postprocessing, controls ---
 export default function CellScene() {
   // mitochondria positions for fidelity to your layout
-  const mitoTransforms = useMemo(() => [
-    { pos: [2, 1, 1], rot: [1, 1, 0] },
-    { pos: [2.5, -1, 0], rot: [0.5, 2, 0] },
-    { pos: [1, -2.5, 1], rot: [2, 0, 1] },
-    { pos: [-1, -2, -1], rot: [0, 0.5, 1] },
-    { pos: [-2, 0.5, 2], rot: [1, 0, 0] }
-  ], [])
+  const mitoTransforms = useMemo(
+    () => [
+      { pos: [2, 1, 1], rot: [1, 1, 0] },
+      { pos: [2.5, -1, 0], rot: [0.5, 2, 0] },
+      { pos: [1, -2.5, 1], rot: [2, 0, 1] },
+      { pos: [-1, -2, -1], rot: [0, 0.5, 1] },
+      { pos: [-2, 0.5, 2], rot: [1, 0, 0] },
+    ],
+    []
+  );
 
   return (
     <>
-      <color attach="background" args={['#000000']} />
-      <hemisphereLight skyColor={0x444466} groundColor={0x222222} intensity={0.25} />
+      <color attach="background" args={["#000000"]} />
+
+      <Stars
+        radius={50}
+        depth={50}
+        count={2000}
+        factor={4}
+        saturation={0}
+        fade
+        speed={1}
+      />
+
+      <hemisphereLight
+        skyColor={0x444466}
+        groundColor={0x222222}
+        intensity={0.25}
+      />
       <ambientLight intensity={0.15} />
       <pointLight position={[10, 10, 10]} intensity={1.3} />
-      <spotLight position={[-10, 0, -5]} intensity={4.2} angle={0.5} penumbra={1} color="#44aaff" />
+      <spotLight
+        position={[-10, 0, -5]}
+        intensity={4.2}
+        angle={0.5}
+        penumbra={1}
+        color="#44aaff"
+      />
       <spotLight position={[0, -10, 0]} intensity={1.8} color="#ff0055" />
 
       <group>
@@ -220,23 +286,36 @@ export default function CellScene() {
 
         <mesh position={[1.5, 2, 0]}>
           <sphereGeometry args={[0.3, 16, 16]} />
-          <meshStandardMaterial color={COLORS.vesicle} emissive={COLORS.vesicle} emissiveIntensity={0.5} />
+          <meshStandardMaterial
+            color={COLORS.vesicle}
+            emissive={COLORS.vesicle}
+            emissiveIntensity={0.5}
+          />
         </mesh>
 
         <mesh position={[-1, -1.5, 2]}>
           <sphereGeometry args={[0.4, 18, 18]} />
-          <meshStandardMaterial color="#4488ff" emissive="#4488ff" emissiveIntensity={0.5} />
+          <meshStandardMaterial
+            color="#4488ff"
+            emissive="#4488ff"
+            emissiveIntensity={0.5}
+          />
         </mesh>
 
         <Sparkles count={400} scale={3.8} size={3} color="#ccffdd" />
       </group>
 
       <EffectComposer disableNormalPass>
-        <Bloom intensity={1.4} luminanceThreshold={0.18} mipmapBlur radius={0.6} />
+        <Bloom
+          intensity={1.4}
+          luminanceThreshold={0.18}
+          mipmapBlur
+          radius={0.6}
+        />
         <Vignette eskil={false} offset={0.1} darkness={1.05} />
       </EffectComposer>
 
       <OrbitControls autoRotate autoRotateSpeed={0.45} enableZoom enablePan />
     </>
-  )
+  );
 }

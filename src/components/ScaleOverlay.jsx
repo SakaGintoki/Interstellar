@@ -53,7 +53,7 @@ export function ScaleOverlay() {
     <div
       style={{
         position: "fixed",
-        top: 16,
+        bottom: 16,
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 40,

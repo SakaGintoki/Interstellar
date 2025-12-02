@@ -5,9 +5,9 @@ import * as THREE from "three";
 import vertexShader from "../shaders/galaxy/vertex.glsl";
 import fragmentShader from "../shaders/galaxy/fragment.glsl";
 
-const PARTICLE_COUNT = 300000; // Ditingkatkan untuk kepadatan ala Milky Way
-const BRANCHES = 3; // Milky Way memiliki lengan spiral yang kompleks
-const RADIUS = 25; // Lebih luas
+const PARTICLE_COUNT = 700000; // Ditingkatkan untuk kepadatan ala Milky Way
+const BRANCHES = 5; // Milky Way memiliki lengan spiral yang kompleks
+const RADIUS = 85; // Lebih luas
 const SPIN = 1;
 const RANDOMNESS = 0.3;
 const RANDOMNESS_POWER = 4; // Kekuatan pemusatan partikel ke lengan
