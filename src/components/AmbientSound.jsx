@@ -10,7 +10,7 @@ const AmbientSound = () => {
 
   const initializeAudio = () => {
     if (audioRef.current) {
-      audioRef.current.volume = 0.3;
+      audioRef.current.volume = 0.7;
       audioRef.current.play().catch((err) => console.log("Audio play error:", err));
 
       setIsFadingOut(true);
