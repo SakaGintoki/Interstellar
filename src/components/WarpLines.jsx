@@ -50,7 +50,7 @@ export function WarpLines({
     mat.opacity = THREE.MathUtils.lerp(0, 0.8, intensity * 1.5); // Lebih smooth
     
     // Warna bisa berubah sedikit saat kecepatan tinggi (opsional, di sini tetap putih)
-    // mat.color.setHSL(0.6, 1, 0.5 + intensity * 0.5); 
+    mat.color.setHSL(0.6, 1, 0.5 + intensity * 0.5); 
 
     const dir = warpDirectionRef?.current ?? 1; // 1 = zoom out, -1 = zoom in
 

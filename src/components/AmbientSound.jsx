@@ -108,7 +108,7 @@ const AmbientSound = () => {
           onClick={toggleMute}
           title={isMuted ? "Unmute Sound" : "Mute Sound"}
           className={`
-            fixed bottom-20 right-6 z-50 p-3 rounded-full transition-all duration-500 ease-out origin-center
+            fixed bottom-32 right-6 z-50 p-3 rounded-full transition-all duration-500 ease-out origin-center
             border backdrop-blur-md group
             ${isMuted 
               ? 'bg-red-500/10 hover:bg-red-500/30 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
