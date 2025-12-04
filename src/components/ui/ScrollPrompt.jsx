@@ -18,7 +18,7 @@ function ScrollPrompt() {
     // UBAH: Tambahkan 'hidden md:block'
     // 'hidden': Sembunyi secara default (Mobile)
     // 'md:block': Muncul hanya di layar medium ke atas (Desktop)
-    <div className="hidden md:block fixed bottom-24 left-1/2 -translate-x-1/2 transform text-white text-center animate-pulse z-50 pointer-events-none">
+    <div className="hidden md:block fixed bottom-32 left-1/2 -translate-x-1/2 transform text-white text-center animate-pulse z-50 pointer-events-none">
       
       <p className="text-xs font-mono tracking-[0.2em] uppercase opacity-80 mb-2 drop-shadow-md">
         Scroll to Explore

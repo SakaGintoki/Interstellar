@@ -130,12 +130,10 @@ const expertPersona = {
   atom: "You are an expert in atomic structure, quantum behavior, and subatomic particles.",
   dna: "You are an expert in genetics, DNA structure, replication, and molecular biology.",
   cell: "You are a specialist in cellular biology, organelles, and biochemical processes.",
-  earth:
-    "You are a geoscience and planetary expert focusing on Earth and the Moon.",
+  earth:"You are a geoscience and planetary expert focusing on Earth and the Moon.",
   solar: "You are an astrophysics expert specializing in the Solar System.",
   galaxy: "You are an expert in galactic formation, stars, and black holes.",
-  universe:
-    "You are a cosmology and astrophysics expert specializing in spacetime.",
+  universe:"You are a cosmology and astrophysics expert specializing in spacetime.",
 };
 
 // --- MAIN COMPONENT ---
