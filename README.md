@@ -14,16 +14,16 @@ This project focuses on **high-immersion visuals**, smooth scene transitions, an
 
 ---
 
-## 📸 Gallery
+## Gallery
 
 ### Start Screen
-<img src="https://github.com/user-attachments/assets/b4fb73f0-3e34-46b5-91bf-91b5c6ebb675" alt="Cell Scene - Microscopic View" width="100%">
+![Start Screen](https://github.com/user-attachments/assets/6b4a20f3-c4da-4515-99e1-f4ce32e3e7a2)
 
-### Planetary Scale: Earth
-<img src="https://github.com/user-attachments/assets/6b4a20f3-c4da-4515-99e1-f4ce32e3e7a2" alt="Earth Scene - Planetary View" width="100%">
+### Galaxy view
+![Galaxy View](https://github.com/user-attachments/assets/b4fb73f0-3e34-46b5-91bf-91b5c6ebb675)
 
-### Cosmic Scale: Solar System
-<img src="https://github.com/user-attachments/assets/45c88cb0-5c63-4ba8-b5ff-867302cb3788" alt="Solar System Scene - Cosmic View" width="100%">
+### Microscopic details
+![Solar System View](https://github.com/user-attachments/assets/45c88cb0-5c63-4ba8-b5ff-867302cb3788)
 
 ---
 
