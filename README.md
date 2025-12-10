@@ -1,4 +1,4 @@
-# Interstellar 🌌
+# Interstellar
 
 ![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)
 ![ThreeJS](https://img.shields.io/badge/Three.js-WebGL-green?style=flat-square&logo=three.js)
@@ -14,11 +14,16 @@ This project focuses on **high-immersion visuals**, smooth scene transitions, an
 
 ---
 
-##  Demo Preview
+## 📸 Gallery
 
-![Demo Preview](https://via.placeholder.com/800x400?text=Demo+GIF+Coming+Soon)
+### Start Screen
+<img src="https://github.com/user-attachments/assets/b4fb73f0-3e34-46b5-91bf-91b5c6ebb675" alt="Cell Scene - Microscopic View" width="100%">
 
-> *Add your demo GIF or screenshot here by replacing the link above.*
+### Planetary Scale: Earth
+<img src="https://github.com/user-attachments/assets/6b4a20f3-c4da-4515-99e1-f4ce32e3e7a2" alt="Earth Scene - Planetary View" width="100%">
+
+### Cosmic Scale: Solar System
+<img src="https://github.com/user-attachments/assets/45c88cb0-5c63-4ba8-b5ff-867302cb3788" alt="Solar System Scene - Cosmic View" width="100%">
 
 ---
 
