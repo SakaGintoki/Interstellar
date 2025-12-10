@@ -29,16 +29,16 @@ This project focuses on **high-immersion visuals**, smooth scene transitions, an
 
 ##  Features
 
-* ** Multi-scene Exploration**
+* **Multi-scene Exploration**
     Seamlessly travel through scales:
     `Atom` → `Cell` → `DNA` → `Earth` → `Solar System` → `Galaxy` → `Universe`
-* ** High-detail Rendering**
+* **High-detail Rendering**
     Features atmospheric scattering shaders, volumetric galaxy particles, dynamic starfields, and bloom/glow effects.
-* ** AI Assistant Panel**
+* **AI Assistant Panel**
     Built-in chat interface connected to a local API for interactive explanations about the current view.
-* ** Ambient Audio System**
+* **Ambient Audio System**
     Immersive, looping space-themed ambience with an integrated mute toggle.
-* ** Asset Preloader + Checkpoints**
+* **Asset Preloader + Checkpoints**
     Smart loading system to reduce stutter and ensure scenes render correctly before transition.
 
 ---
