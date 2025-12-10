@@ -19,11 +19,11 @@ This project focuses on **high-immersion visuals**, smooth scene transitions, an
 ### Start Screen
 ![Start Screen](https://github.com/user-attachments/assets/6b4a20f3-c4da-4515-99e1-f4ce32e3e7a2)
 
+### Solar System view
+![Solar System View](https://github.com/user-attachments/assets/45c88cb0-5c63-4ba8-b5ff-867302cb3788)
+
 ### Galaxy view
 ![Galaxy View](https://github.com/user-attachments/assets/b4fb73f0-3e34-46b5-91bf-91b5c6ebb675)
-
-### Microscopic details
-![Solar System View](https://github.com/user-attachments/assets/45c88cb0-5c63-4ba8-b5ff-867302cb3788)
 
 ---
 
