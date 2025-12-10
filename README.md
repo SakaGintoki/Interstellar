@@ -51,7 +51,6 @@ This project focuses on **high-immersion visuals**, smooth scene transitions, an
 | **3D / WebGL** | React Three Fiber (R3F), Drei, GLSL Shaders |
 | **State Management** | Zustand (Global Scene Store) |
 | **Styling/UI** | Tailwind CSS |
-| **Interaction** | Lenis (Smooth Scrolling) |
 | **Backend/AI** | Local Node API (`/api/chat.js`) |
 
 ---
